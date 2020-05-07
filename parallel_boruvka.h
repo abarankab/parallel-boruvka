@@ -49,9 +49,8 @@ struct ParallelBoruvkaMST {
             {
                 std::unordered_map<u32, std::pair<u32, u32>> local_shortest_edges(graph.num_nodes());
 
-                #pragma omp for
-                for (u32 i = 0; i < initial_num_nodes; ++i) {
-                    shortest_edges[i] = encode_edge(0, std::numeric_limits<u32>::max());
+                for (u32 i = 0; i < graph.num_nodes(); ++i) {
+                    shortest_edges[graph.nodes[i]] = encode_edge(0, std::numeric_limits<u32>::max());
                 }
 
                 #pragma omp for

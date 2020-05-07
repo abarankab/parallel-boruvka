@@ -1,7 +1,7 @@
 #include "../benchmark.h"
 #include "../verbose.h"
 #include "../graph.h"
-#include "../sequential_boruvka.h"
+#include "../verbose2.h"
 
 int main(int argc, char* argv[]) {
     if (argc == 1) {

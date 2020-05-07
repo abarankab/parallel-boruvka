@@ -62,7 +62,7 @@ struct ParallelBoruvkaMST {
             /* Calculating shortest edges from each node */
             #pragma omp parallel num_threads(NUM_THREADS)
             {
-                std::unordered_map<u32, std::pair<u32, u32>> local_shortest_edges(graph.num_nodes());
+                std::unordered_map<u32, std::pair<u32, u32>> local_shortest_edges;
 
                 #pragma omp for
                 for (u32 i = 0; i < graph.num_edges(); ++i) {
@@ -74,9 +74,6 @@ struct ParallelBoruvkaMST {
                         local_shortest_edges[e.from] = { e.weight, i };
                     }
                 }
-
-                #pragma omp critical
-                std::cout << "Thread no. " << omp_get_thread_num() << " " << local_shortest_edges.size() << "\n";
 
                 for (const auto& p : local_shortest_edges) { /* O(M / p) operations in each thread */
                     u64 old = shortest_edges[p.first];
@@ -188,10 +185,11 @@ struct ParallelBoruvkaMST {
             graph.edges.swap(new_edges);
             graph.sort_edges();
 
-            std::cout << "sort done in " << currentSeconds() - L << "\n";
+            std::cout << "sort done in " << currentSeconds() - L << "\n\n";
             L = currentSeconds();
         }
 
+        std::cout << "---\n\n";
         return mst;
     }
 };
