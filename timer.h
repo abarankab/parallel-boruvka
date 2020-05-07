@@ -1,11 +1,8 @@
 #ifndef __TIMER_H
 #define __TIMER_H
 
-#include <iostream>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/time.h>
+#include <chrono>
 
 #include "defs.h"
 

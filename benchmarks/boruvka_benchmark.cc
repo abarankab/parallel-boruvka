@@ -6,7 +6,7 @@
 #include "../sequential_boruvka.h"
 #include "../timer.h"
 
-const u32 NUM_ITER = 1;
+const u32 NUM_ITER = 50;
 const u32 MAX_N = 1'000'000;
 const u32 STEP = 200'000;
 

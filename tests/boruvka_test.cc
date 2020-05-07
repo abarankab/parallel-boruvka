@@ -1,5 +1,5 @@
 #include "../benchmark.h"
-#include "../parallel_boruvka.h"
+#include "../verbose.h"
 #include "../graph.h"
 #include "../sequential_boruvka.h"
 
