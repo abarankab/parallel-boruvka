@@ -20,7 +20,7 @@ struct ParallelBoruvkaMST {
     const u64 EDGE_WEIGHT_MASK = 0xFFFFFFFF00000000ULL;
 
     u64 encode_edge(u32 id, u32 weight) {
-        return (static_cast<u64>(weight) << EDGE_BINARY_BUCKET_SIZE) + id;
+        return (static_cast<u64>(weight) << EDGE_BINARY_BUCKET_SIZE) | id;
     }
 
     u32 get_id(u64 encoded_edge) {
@@ -47,7 +47,10 @@ struct ParallelBoruvkaMST {
             /* Calculating shortest edges from each node */
             #pragma omp parallel num_threads(NUM_THREADS)
             {
-                std::unordered_map<u32, std::pair<u32, u32>> local_shortest_edges(graph.num_nodes());
+                ParallelArray<std::pair<u32, u32>> local_shortest_edges(initial_num_nodes);
+                ParallelArray<u32> local_nodes(graph.num_nodes());
+                u32 local_size = 0;
+                u32 last_node = initial_num_nodes + 1;  /* Assuming there is no node bigger than N in G */
 
                 for (u32 i = 0; i < graph.num_nodes(); ++i) {
                     shortest_edges[graph.nodes[i]] = encode_edge(0, std::numeric_limits<u32>::max());
@@ -57,26 +60,30 @@ struct ParallelBoruvkaMST {
                 for (u32 i = 0; i < graph.num_edges(); ++i) {
                     const Edge& e = graph.edges[i];
 
-                    if (local_shortest_edges.count(e.from) == 0 ||
-                        local_shortest_edges[e.from].first > e.weight) {
-
+                    if (e.from != last_node || local_shortest_edges[e.from].first > e.weight) {
                         local_shortest_edges[e.from] = { e.weight, i };
+                        if (e.from != last_node) {
+                            local_nodes[local_size++] = e.from;
+                            last_node = e.from;
+                        }
                     }
                 }
 
-                for (const auto& p : local_shortest_edges) { /* O(M / p) operations in each thread */
-                    u64 old = shortest_edges[p.first];
+                for (u32 i = 0; i < local_size; ++i) { /* O(M / p) operations in each thread */
+                    u32 node = local_nodes[i];
+                    u64 old = shortest_edges[node];
+                    auto shortest_edge = local_shortest_edges[node];
 
                     /* p.second = { weight, id } */
-                    u64 encoded_edge = encode_edge(p.second.second, p.second.first);
+                    u64 encoded_edge = encode_edge(shortest_edge.second, shortest_edge.first);
 
                     while (true) { /* This loop is wait-free */
-                        if (get_weight(old) < p.second.first ||
-                            shortest_edges[p.first].compare_exchange_strong(old, encoded_edge)) {
+                        if (get_weight(old) < shortest_edge.first ||
+                            shortest_edges[node].compare_exchange_strong(old, encoded_edge)) {
                             break;
                         }
                     }
-                }            
+                }
             }
 
             /* Calculating selected edges */
@@ -90,14 +97,12 @@ struct ParallelBoruvkaMST {
             #pragma omp parallel for num_threads(NUM_THREADS)
             for (u32 i = 0; i < graph.num_nodes(); ++i) {
                 u32 u = graph.nodes[i];
-                const Edge& min_edge_u = graph.edges[get_id(shortest_edges[u])];
-
-                u32 v = min_edge_u.to;
-                const Edge& min_edge_v = graph.edges[get_id(shortest_edges[v])];
+                u32 v = graph.edges[get_id(shortest_edges[u])].to;
                 
-                if (min_edge_v.to != u || (min_edge_v.to == u && u < v)) {
+                /* If smallest edge from v goes to u or u < v */
+                if (graph.edges[get_id(shortest_edges[v])].to != u || u < v) { 
                     node_sets.unite(u, v);
-                    edge_selected[get_id(shortest_edges[u])] = 1;
+                    edge_selected[get_id(shortest_edges[u])] = true;
                 }
             }
 

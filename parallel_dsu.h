@@ -69,6 +69,10 @@ struct ParallelDSU {
         }
     }
 
+    u64 encode_node(u32 parent, u32 rank) {
+        return (static_cast<u64>(rank) << BINARY_BUCKET_SIZE) | parent;
+    }
+
     u32 get_parent(u32 id) const {
         return static_cast<u32>(data[id]);
     }
@@ -157,8 +161,8 @@ struct ParallelDSU {
                 std::swap(id1, id2);
             }
 
-            u64 old_value = (static_cast<u64>(rank2) << BINARY_BUCKET_SIZE) | id2;
-            u64 new_value = (static_cast<u64>(rank2) << BINARY_BUCKET_SIZE) | id1;
+            u64 old_value = encode_node(id2, rank2);
+            u64 new_value = encode_node(id1, rank2);
 
             /* If CAS fails we need to repeat the same step once again */
             if (!data[id2].compare_exchange_strong(old_value, new_value)) {
@@ -167,8 +171,8 @@ struct ParallelDSU {
 
             /* Updating rank */
             if (rank1 == rank2) {
-                old_value = (static_cast<u64>(rank1) << BINARY_BUCKET_SIZE) | id1;
-                new_value = (static_cast<u64>(rank1 + 1) << BINARY_BUCKET_SIZE) | id1;
+                old_value = encode_node(id1, rank1);
+                new_value = encode_node(id1, rank1 + 1);
 
                 data[id1].compare_exchange_strong(old_value, new_value);
             }
