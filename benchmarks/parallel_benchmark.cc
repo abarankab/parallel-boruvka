@@ -6,7 +6,7 @@
 #include "../graph.h"
 #include "../timer.h"
 
-const u32 NUM_ITER = 1;
+const u32 NUM_ITER = 10;
 
 int main(int argc, char* argv[]) {
     ParallelBoruvkaMST boruvka;
@@ -22,7 +22,7 @@ int main(int argc, char* argv[]) {
     Graph G = load_graph(argv[1]);
     u32 num_threads = atoi(argv[2]);
 
-    u32 avg_par_time = 0;
+    u64 avg_par_time = 0;
 
     for (u32 iter = 1; iter <= NUM_ITER; ++iter) {
         escape(&G);

@@ -77,6 +77,10 @@ struct ParallelBoruvkaMST {
                         }
                     }
                 }
+                
+                u32 total_wait_time = 0;
+                u32 max_wait_time = 0;
+                u32 num_writes = 0;
 
                 for (u32 i = 0; i < local_size; ++i) { /* O(M / P) operations in each thread */
                     u32 node = local_nodes[i];
@@ -86,12 +90,23 @@ struct ParallelBoruvkaMST {
                     /* p.second = { weight, id } */
                     u64 encoded_edge = encode_edge(shortest_edge.second, shortest_edge.first);
 
+                    u32 wait_time = 0;
                     while (true) { /* This loop is wait-free */
+                        ++wait_time;
                         if (get_weight(old) < shortest_edge.first ||
                             shortest_edges[node].compare_exchange_strong(old, encoded_edge)) {
                             break;
                         }
                     }
+
+                    total_wait_time += wait_time;
+                    if (max_wait_time < wait_time) max_wait_time = wait_time;
+                    ++num_writes;
+                }
+
+                #pragma omp critical
+                {
+                    std::cout << (double)total_wait_time / num_writes << " " << max_wait_time << "\n";
                 }
             }
 
