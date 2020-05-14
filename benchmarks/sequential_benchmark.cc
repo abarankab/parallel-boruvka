@@ -5,11 +5,7 @@
 #include "../graph.h"
 #include "../timer.h"
 
-<<<<<<< HEAD
 const u32 NUM_ITER = 10;
-=======
-const u32 NUM_ITER = 1;
->>>>>>> b56e9ab56cb63db7c75e0932ddf7388f6e38decf
 
 int main(int argc, char* argv[]) {
     SequentialBoruvkaMST boruvka;
