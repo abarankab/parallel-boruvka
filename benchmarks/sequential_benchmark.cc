@@ -16,7 +16,7 @@ int main(int argc, char* argv[]) {
 
     Graph G = load_graph(argv[1]);
 
-    u32 avg_seq_time = 0;
+    u64 avg_seq_time = 0;
 
     for (u32 iter = 1; iter <= NUM_ITER; ++iter) {
         escape(&G);
